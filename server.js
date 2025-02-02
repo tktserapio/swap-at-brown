@@ -1,6 +1,9 @@
-const express = require('express');
-const { MongoClient } = require('mongodb');
-const cors = require('cors');
+import dotenv from 'dotenv';
+import express from 'express';
+import { MongoClient } from 'mongodb';
+import cors from 'cors';
+
+dotenv.config();
 
 const app = express();
 
@@ -8,7 +11,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());  // This is important for parsing JSON bodies!
 
-const uri = "mongodb+srv://tyroneserapio:FzRsWzkjVaODdWoW@cluster0.kt37d.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri);
 
 // Test the database connection
