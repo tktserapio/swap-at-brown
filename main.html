@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeSwapper</title>
+    <title>Swap@Brown</title>
     <link id="theme-style" href="lebron.css" rel="stylesheet">
 </head>
 <body>
     <div class="animated-bg"></div>
     <div class="header">
-        <h1>LeSwapper</h1>
+        <h1>Swap@Brown</h1>
         <button class="toggle-mode">Lock In</button>
         <button class="create-swap">+ Create a Swap</button>
     </div>
@@ -18,33 +18,15 @@
         <input type="text" placeholder="Search for a class...">
     </div>
     <div class="container">
-        <div class="category">🔥 Hot Swaps 🔥</div>
-        <div class="card-container">
-            <div class="card" data-email="cs101@brown.edu">
-                <h2>CHEM350 - S01</h2>
-                <p>Looking to switch to S02</p>
-                <button class="btn swap-btn">Request Swap</button>
-            </div>
-            <div class="card" data-email="cs101@brown.edu">
-                <h2>MATH520 - S03</h2>
-                <p>Looking to switch to S02</p>
-                <button class="btn swap-btn">Request Swap</button>
-            </div>
-            <div class="card" data-email="cs101@brown.edu">
-                <h2>MATH200 - S02</h2>
-                <p>Looking to switch to S01</p>
-                <button class="btn swap-btn">Request Swap</button>
-            </div>
+        <div class="category">🔥 Swaps for You 🔥</div>
+        <div class="cards-container">
         </div>
     </div>
     
     <div class="popup-overlay"></div>
     <div class="popup">
         <h2>Request Swap</h2>
-        <p style="color: #000;">Contact Email: <span id="swap-email"></span></p>
-        <input type="text" id="name" placeholder="Your Name">
-        <input type="email" id="email" placeholder="Your Email">
-        <button class="popup-submit">Submit</button>
+        <p style="color: #000;">Contact Email: <br><span id="swap-email"></span></p>
         <br><button class="popup-close">Close</button>
     </div>
     
@@ -76,6 +58,8 @@
                 </div>
             </div>
         </div>
+
+        <input type="email" class="email-input" placeholder="Enter your email">
 
         <button class="confirm-swap-button">Confirm Swap</button>
         <!-- <button class="popup-submit">Confirm Swap</button> -->

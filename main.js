@@ -19,26 +19,29 @@ document.querySelectorAll('.close-button').forEach(button => {
         const popup = this.closest('.popup');
         popup.style.display = 'none';
         
-        // Clear all inputs and dropdowns in the popup
-        const searchBar = popup.querySelector('.search-bar input');
-        const sectionSelect = popup.querySelector('.section-select');
-        const courseSelect = popup.querySelector('.course-select'); // If you have a course select dropdown
+        const leftClassInput = popup.querySelector('.search-column-left .search-bar input');
+        const leftSectionSelect = popup.querySelector('.search-column-left .section-select');
+        const rightClassInput = popup.querySelector('.search-column-right .search-bar input');
+        const rightSectionSelect = popup.querySelector('.search-column-right .section-select');
+        const emailDisplay = popup.querySelector('.contact-email'); // Get the email display
         
-        // Clear search input
-        if (searchBar) {
-            searchBar.value = '';
+        // Clear search inputs
+        if (leftClassInput) leftClassInput.value = '';
+        if (rightClassInput) rightClassInput.value = '';
+        
+        // Reset section selects
+        if (leftSectionSelect) {
+            leftSectionSelect.innerHTML = '<option value="" disabled selected>Select your section</option>';
+            leftSectionSelect.disabled = true;
         }
-        
-        // Reset section select
-        if (sectionSelect) {
-            sectionSelect.innerHTML = '<option value="" disabled selected>Select your section</option>';
-            sectionSelect.disabled = true;
+        if (rightSectionSelect) {
+            rightSectionSelect.innerHTML = '<option value="" disabled selected>Select your section</option>';
+            rightSectionSelect.disabled = true;
         }
-        
-        // Reset course select if it exists
-        if (courseSelect) {
-            courseSelect.innerHTML = '<option value="" disabled selected>Select your course</option>';
-            courseSelect.disabled = true;
+
+        // Clear email display
+        if (emailDisplay) {
+            emailDisplay.textContent = 'Contact Email: ';
         }
     });
 });
@@ -49,19 +52,22 @@ document.querySelectorAll('.close-button').forEach(button => {
 
 document.querySelectorAll('.confirm-swap-button').forEach(button => {
     button.addEventListener('click', async function() {
-        const popup = this.closest('.create-swap-popup');
-        const overlay = document.querySelector('.popup-overlay'); // Get the overlay element
+        const popup = this.closest('.popup');
+        const overlay = document.querySelector('.popup-overlay');
         
-        // Get inputs
+        // Get all inputs
         const leftClassInput = popup.querySelector('.search-column-left .search-bar input');
         const leftSectionSelect = popup.querySelector('.search-column-left .section-select');
         const rightClassInput = popup.querySelector('.search-column-right .search-bar input');
         const rightSectionSelect = popup.querySelector('.search-column-right .section-select');
-        
-        // Validate inputs
-        if (!leftClassInput.value || !leftSectionSelect.value || 
-            !rightClassInput.value || !rightSectionSelect.value) {
-            alert('Please select both classes and sections');
+        const emailInput = popup.querySelector('.email-input');
+
+        // Validate all fields
+        if (!leftClassInput.value.trim() || 
+            !leftSectionSelect.value || 
+            !rightClassInput.value.trim() || 
+            !rightSectionSelect.value) {
+            alert('Please fill in all fields before submitting');
             return;
         }
 
@@ -69,8 +75,11 @@ document.querySelectorAll('.confirm-swap-button').forEach(button => {
             leftClass: leftClassInput.value.trim().toUpperCase(),
             rightClass: rightClassInput.value.trim().toUpperCase(),
             desiredSection: rightSectionSelect.value,
-            currentSection: leftSectionSelect.value
+            currentSection: leftSectionSelect.value,
+            email: emailInput ? emailInput.value.trim() : '' // Make email optional
         };
+
+        console.log('Sending swap data:', swapData); // Debug log
 
         try {
             const response = await fetch('http://localhost:3000/api/swaps', {
@@ -81,11 +90,12 @@ document.querySelectorAll('.confirm-swap-button').forEach(button => {
                 body: JSON.stringify(swapData)
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to create swap request');
-            }
+            console.log('Response status:', response.status); // Debug log
 
-            // Clear the form
+            const responseData = await response.json();
+            console.log('Response data:', responseData); // Debug log
+
+            // Clear form and close popup
             leftClassInput.value = '';
             leftSectionSelect.innerHTML = '<option value="" disabled selected>Select your section</option>';
             leftSectionSelect.disabled = true;
@@ -94,33 +104,20 @@ document.querySelectorAll('.confirm-swap-button').forEach(button => {
             rightSectionSelect.innerHTML = '<option value="" disabled selected>Select your section</option>';
             rightSectionSelect.disabled = true;
 
+            // Show success message and close popup
             alert('Swap request submitted successfully!');
-            
-            // Hide both popup and overlay
             popup.style.display = 'none';
             if (overlay) {
                 overlay.style.display = 'none';
             }
-            
-            // Re-enable scrolling on the body if needed
-            document.body.style.overflow = 'auto';
+
+            // Refresh the displayed swaps
+            await displaySwaps();
 
         } catch (error) {
-            console.error('Error submitting swap:', error);
+            console.error('Detailed error:', error); // More detailed error logging
             alert('Failed to submit swap request. Please try again.');
         }
-    });
-});
-
-// ... existing code ...
-
-document.querySelectorAll('.swap-btn').forEach(button => {
-    button.addEventListener('click', function() {
-        const card = this.closest('.card');
-        const email = card.getAttribute('data-email');
-        document.getElementById('swap-email').innerText = email;
-        document.querySelector('.popup').style.display = 'flex';
-        document.querySelector('.popup-overlay').style.display = 'block';
     });
 });
 
@@ -142,6 +139,68 @@ document.querySelectorAll('.popup-close').forEach(button => {
         });
     });
 });
+
+async function displaySwaps() {
+    try {
+        console.log('Fetching swaps...');
+        const response = await fetch('http://localhost:3000/api/swaps');
+        const swaps = await response.json();
+        console.log('Fetched swaps:', swaps); // See what data we're getting
+        
+        const cardsContainer = document.querySelector('.cards-container');
+        console.log('Cards container:', cardsContainer); // Check if we found the container
+        
+        if (!cardsContainer) {
+            console.error('Could not find cards-container element');
+            return;
+        }
+        
+        // Clear existing cards
+        cardsContainer.innerHTML = '';
+        
+        if (swaps.length === 0) {
+            console.log('No swaps found in database');
+            cardsContainer.innerHTML = '<p>No swap requests available.</p>';
+            return;
+        }
+        
+        // Create a card for each swap
+        swaps.forEach(swap => {
+            console.log('Creating card for swap:', swap); // Log each swap we're processing
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataEmail = swap.email;
+            card.innerHTML = `
+                <h2>${swap.leftClass} - ${swap.currentSection}</h2>
+                <p>In exchange for <span style="text-decoration:underline">${swap.rightClass} - ${swap.desiredSection}</span></p>
+                <button class="btn swap-btn">Request Swap</button>
+            `;
+            cardsContainer.appendChild(card);
+        });
+
+        document.querySelectorAll('.swap-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.card');
+                const email = card.dataEmail; // Use the property instead of getAttribute
+                document.getElementById('swap-email').innerText = email;
+                document.querySelector('.popup').style.display = 'flex';
+                document.querySelector('.popup-overlay').style.display = 'block';
+            });
+        });
+        
+        console.log('Finished creating cards');
+    } catch (error) {
+        console.error('Error in displaySwaps:', error);
+    }
+}
+
+// Make sure we're calling displaySwaps when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded, calling displaySwaps');
+    displaySwaps();
+});
+
+document.addEventListener('DOMContentLoaded', displaySwaps);
 
 document.querySelectorAll('.popup-submit').forEach(button => {
     button.addEventListener('click', function() {
@@ -203,37 +262,71 @@ document.querySelectorAll('.create-swap-popup .search-button').forEach(button =>
     });
 });
 
-// Handle class selection and show section options
-// document.getElementById('class-select').addEventListener('change', function() {
-//     const selectedClass = this.value;
-//     const sectionSelect = document.getElementById('section-selection');
-//     const fromSection = document.getElementById('from-section');
-//     const toSection = document.getElementById('to-section');
-
-//     if (selectedClass) {
-//         sectionSelect.style.display = 'block';
+async function filterSwaps(searchQuery) {
+    try {
+        const response = await fetch('http://localhost:3000/api/swaps');
+        const swaps = await response.json();
         
-//         // Example sections for demo purposes
-//         const sections = {
-//             'CS101': ['Section A', 'Section B', 'Section C'],
-//             'MATH200': ['Lecture 1', 'Lecture 2'],
-//             'PHYS150': ['Group X', 'Group Y']
-//         };
-
-//         // Populate sections dynamically
-//         fromSection.innerHTML = '<option value="">-- Select a Section --</option>';
-//         toSection.innerHTML = '<option value="">-- Select a Section --</option>';
+        // Filter swaps based on the search query
+        const filteredSwaps = swaps.filter(swap => 
+            swap.leftClass.includes(searchQuery.toUpperCase()) || 
+            swap.rightClass.includes(searchQuery.toUpperCase())
+        );
         
-//         sections[selectedClass].forEach(section => {
-//             const option1 = new Option(section, section);
-//             const option2 = new Option(section, section);
-//             fromSection.add(option1);
-//             toSection.add(option2);
-//         });
-//     } else {
-//         sectionSelect.style.display = 'none';
-//     }
-// });
+        const cardsContainer = document.querySelector('.cards-container');
+        cardsContainer.innerHTML = '';
+        
+        if (filteredSwaps.length === 0) {
+            cardsContainer.innerHTML = '<p>No matching swaps found.</p>';
+            return;
+        }
+        
+        // Display filtered swaps
+        filteredSwaps.forEach(swap => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataEmail = swap.email;
+            card.innerHTML = `
+                <h2>${swap.leftClass} - ${swap.currentSection}</h2>
+                <p>Looking to switch to ${swap.rightClass} ${swap.desiredSection}</p>
+                <button class="btn swap-btn">Request Swap</button>
+            `;
+            cardsContainer.appendChild(card);
+        });
+
+        // Re-add event listeners to the new filtered buttons
+        document.querySelectorAll('.swap-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const card = this.closest('.card');
+                const email = card.dataEmail; // Use the property instead of getAttribute
+                document.getElementById('swap-email').innerText = email;
+                document.querySelector('.popup').style.display = 'flex';
+                document.querySelector('.popup-overlay').style.display = 'block';
+            });
+        });
+    } catch (error) {
+        console.error('Error filtering swaps:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const searchBar = document.querySelector('.search-bar input');
+    
+    if (searchBar) {
+        // Handle Enter key press
+        searchBar.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                const searchQuery = searchBar.value.trim();
+                if (searchQuery) {
+                    await filterSwaps(searchQuery);
+                } else {
+                    // If search is empty, show all swaps
+                    await displaySwaps();
+                }
+            }
+        });
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function () {
     const toggleButton = document.querySelector('.toggle-mode');
